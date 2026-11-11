@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 import os
+from pathlib import Path
 import subprocess
+import sys
+import time
 import urllib.request
 import json
 from mcp.server.mcpserver import MCPServer
@@ -13,6 +16,50 @@ LOCAL_LLM_MODEL = os.environ.get("LOCAL_LLM_MODEL", "qwen-local")
 LOCAL_LLM_TIMEOUT = float(os.environ.get("LOCAL_LLM_TIMEOUT", "30"))
 BASH_DEFAULT_TIMEOUT_MS = int(os.environ.get("BASH_DEFAULT_TIMEOUT_MS", "120000"))
 BASH_MAX_TIMEOUT_MS = max(int(os.environ.get("BASH_MAX_TIMEOUT_MS", "600000")), BASH_DEFAULT_TIMEOUT_MS)
+
+def loki_url() -> str:
+    if "SMART_BASH_LOKI_URL" in os.environ:
+        return os.environ["SMART_BASH_LOKI_URL"]
+    config_dir = Path(os.environ.get("XDG_CONFIG_HOME") or Path.home() / ".config")
+    try:
+        return (config_dir / "smart-bash" / "loki-url").read_text(encoding="utf-8").strip()
+    except FileNotFoundError:
+        return ""
+    except OSError as error:
+        print(f"Smart Bash telemetry configuration unavailable: {type(error).__name__}", file=sys.stderr)
+        return ""
+
+SMART_BASH_LOKI_URL = loki_url()
+
+def record_usage(original: str, returned: str, mode: str) -> None:
+    if not SMART_BASH_LOKI_URL:
+        return
+    original_bytes = len(original.encode("utf-8"))
+    returned_bytes = len(returned.encode("utf-8"))
+    event = {
+        "mode": mode,
+        "original_bytes": original_bytes,
+        "returned_bytes": returned_bytes,
+        "original_tokens_estimate": original_bytes / 4,
+        "returned_tokens_estimate": returned_bytes / 4,
+        "saved_tokens_estimate": (original_bytes - returned_bytes) / 4,
+    }
+    payload = json.dumps({
+        "streams": [{
+            "stream": {"app": "smart-bash"},
+            "values": [[str(time.time_ns()), json.dumps(event)]],
+        }]
+    }).encode("utf-8")
+    try:
+        request = urllib.request.Request(
+            SMART_BASH_LOKI_URL.rstrip("/") + "/loki/api/v1/push",
+            data=payload,
+            headers={"Content-Type": "application/json"},
+        )
+        with urllib.request.urlopen(request, timeout=1):
+            pass
+    except (OSError, ValueError) as error:
+        print(f"Smart Bash telemetry unavailable: {type(error).__name__}", file=sys.stderr)
 
 def summarize_with_local_llm(command: str, raw_output: str) -> str:
     if len(raw_output) < 300:
@@ -60,9 +107,16 @@ def execute_local_bash(command: str, cwd: str = ".", return_raw: bool = False, t
         status = f"ERROR: Command exited with status {result.returncode}.\n" if result.returncode else ""
         
         if return_raw:
-            return f"{status}[Raw Output Requested]\n{combined_output}"
+            output = f"{status}[Raw Output Requested]\n{combined_output}"
+            record_usage(output, output, "raw")
+            return output
             
-        return status + summarize_with_local_llm(command, combined_output)
+        output = status + summarize_with_local_llm(command, combined_output)
+        mode = "short" if len(combined_output) < 300 else (
+            "fallback" if output.startswith(status + "[Output Truncated - Local LLM Summary Unavailable:") else "summary"
+        )
+        record_usage(status + combined_output, output, mode)
+        return output
     except subprocess.TimeoutExpired:
         error_msg = f"ERROR: Command timed out after {timeout_s:g} seconds."
         return error_msg if return_raw else summarize_with_local_llm(command, error_msg)

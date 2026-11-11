@@ -1,0 +1,36 @@
+services:
+  loki:
+    image: docker.io/grafana/loki:3.5.7
+    command: -config.file=/etc/loki/config.yaml
+    networks:
+      default:
+        aliases:
+          - smart-bash-loki
+    ports:
+      - "127.0.0.1:3100:3100"
+    volumes:
+      - loki-data:/loki
+      - ./loki.yaml:/etc/loki/config.yaml:ro
+    restart: unless-stopped
+
+  grafana:
+    image: docker.io/grafana/grafana:12.2.0
+    depends_on:
+      - loki
+    ports:
+      - "127.0.0.1:3300:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Viewer
+      GF_AUTH_BASIC_ENABLED: "false"
+      GF_AUTH_DISABLE_LOGIN_FORM: "true"
+      GF_ANALYTICS_REPORTING_ENABLED: "false"
+      GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana:/etc/grafana/provisioning:ro
+    restart: unless-stopped
+
+volumes:
+  loki-data:
+  grafana-data:

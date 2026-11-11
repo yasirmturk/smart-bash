@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="760" height="220" viewBox="0 0 760 220" role="img" aria-labelledby="title description">
+  <title id="title">Smart Bash</title>
+  <desc id="description">A terminal and a coin represent less command output and lower AI usage costs.</desc>
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#17243b"/>
+      <stop offset="1" stop-color="#0b1324"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffe29a"/>
+      <stop offset="1" stop-color="#f2ae45"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="760" height="220" rx="28" fill="#f4f7fb"/>
+  <rect x="14" y="14" width="192" height="192" rx="42" fill="url(#background)"/>
+  <rect x="37" y="40" width="146" height="105" rx="15" fill="#111c30" stroke="#3ce0bd" stroke-width="4"/>
+  <path d="M39 59h142" stroke="#26364e" stroke-width="3"/>
+  <circle cx="54" cy="51" r="3.5" fill="#ff777a"/>
+  <circle cx="67" cy="51" r="3.5" fill="#ffd166"/>
+  <circle cx="80" cy="51" r="3.5" fill="#3ce0bd"/>
+  <path d="m60 83 15 13-15 13" fill="none" stroke="#3ce0bd" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M85 109h22" stroke="#e9f2ff" stroke-width="6" stroke-linecap="round"/>
+  <path d="M132 91v28m-11-11 11 11 11-11" fill="none" stroke="#f4bd59" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="145" cy="159" rx="29" ry="12" fill="#c9812e"/>
+  <path d="M116 146v13c0 7 13 12 29 12s29-5 29-12v-13" fill="#e99f3c"/>
+  <ellipse cx="145" cy="146" rx="29" ry="12" fill="url(#coin)" stroke="#fff0bd" stroke-width="2"/>
+  <path d="M149 137c-2-2-8-3-11 0-5 4 2 7 7 9 6 2 8 6 4 9-4 3-10 2-14-1m9-22v27" fill="none" stroke="#80541c" stroke-width="2.8" stroke-linecap="round"/>
+
+  <text x="244" y="112" fill="#15243a" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="66" font-weight="750" letter-spacing="-2">Smart Bash</text>
+  <path d="M247 139h62" stroke="#33c9aa" stroke-width="5" stroke-linecap="round"/>
+  <text x="247" y="176" fill="#52627a" font-family="Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif" font-size="21" font-weight="650" letter-spacing="3">CUT TOKENS. LOWER COSTS.</text>
+</svg>

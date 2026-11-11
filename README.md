@@ -1,6 +1,15 @@
 # Smart Bash MCP
 
+<p align="center">
+  <img src="assets/smart-bash-logo.svg" alt="Smart Bash — cut tokens, lower costs" width="640">
+</p>
+
+[![Tests](https://github.com/yasirmturk/smart-bash/actions/workflows/tests.yml/badge.svg)](https://github.com/yasirmturk/smart-bash/actions/workflows/tests.yml)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-FFDD00?logo=buymeacoffee&logoColor=000000)](https://www.buymeacoffee.com/yturk)
+
 An MCP server that runs shell commands and optionally summarizes long output with an OpenAI-compatible chat-completions endpoint. Short output and raw-mode requests bypass the model.
+
+The dashboard reports rough estimates of tokens removed from tool output and their equivalent share of a context window over 1-, 7-, and 30-day periods; these are not actual session or context-window usage. More stats are planned, and users are welcome to share findings and ideas through GitHub issues or pull requests.
 
 ## Safety and privacy
 
@@ -79,6 +88,11 @@ Output of 300 or more characters is summarized by default; only the first 8,000 
 | `LOCAL_LLM_TIMEOUT` | `30` | Model request timeout in seconds |
 | `BASH_DEFAULT_TIMEOUT_MS` | `120000` | Default command timeout |
 | `BASH_MAX_TIMEOUT_MS` | `600000` | Maximum command timeout; at least the default |
+| `SMART_BASH_LOKI_URL` | unset | Optional Loki base URL for usage metrics; overrides the opt-in file |
+
+## Local savings report
+
+For local Docker or Podman setup, telemetry details, report interpretation, and troubleshooting, see **[Monitoring setup](MONITORING.md)**.
 
 ## Troubleshooting
 
