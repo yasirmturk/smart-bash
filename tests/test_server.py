@@ -61,6 +61,9 @@ class SummarizeTests(unittest.TestCase):
 
 class ExecuteTests(unittest.TestCase):
     def setUp(self):
+        config = mock.patch("server.SMART_BASH_LOKI_URL", "")
+        config.start()
+        self.addCleanup(config.stop)
         patcher = mock.patch("server.summarize_with_local_llm", side_effect=lambda cmd, out: f"SUMMARY:{out}")
         self.summarize = patcher.start()
         self.addCleanup(patcher.stop)
@@ -118,6 +121,55 @@ class ExecuteTests(unittest.TestCase):
         server.execute_local_bash("sleep 3", timeout=1000)
         self.summarize.assert_called_once()
         self.assertIn("timed out after 1 seconds", self.summarize.call_args.args[1])
+
+    def test_usage_tracks_raw_and_short_output(self):
+        with mock.patch("server.record_usage") as record:
+            server.execute_local_bash("printf hello", return_raw=True)
+            self.assertEqual(record.call_args.args, (
+                "[Raw Output Requested]\nhello", "[Raw Output Requested]\nhello", "raw"
+            ))
+            server.execute_local_bash("printf hello")
+            self.assertEqual(record.call_args.args, (
+                "hello", "SUMMARY:hello", "short"
+            ))
+
+
+class TelemetryTests(unittest.TestCase):
+    def test_reads_opt_in_configuration_and_environment_override(self):
+        with tempfile.TemporaryDirectory() as directory:
+            config = os.path.join(directory, "smart-bash")
+            os.mkdir(config)
+            with open(os.path.join(config, "loki-url"), "w", encoding="utf-8") as file:
+                file.write("http://localhost:3100\n")
+            with mock.patch.dict(os.environ, {"XDG_CONFIG_HOME": directory}, clear=True):
+                self.assertEqual(server.loki_url(), "http://localhost:3100")
+                with mock.patch.dict(os.environ, {"SMART_BASH_LOKI_URL": ""}):
+                    self.assertEqual(server.loki_url(), "")
+
+    def test_sends_counts_without_text(self):
+        with mock.patch("server.SMART_BASH_LOKI_URL", "http://localhost:3100"):
+            with mock.patch("server.urllib.request.urlopen", return_value=mock.MagicMock()) as urlopen:
+                server.record_usage("private content", "short", "summary")
+        request = urlopen.call_args.args[0]
+        data = json.loads(request.data)
+        event = json.loads(data["streams"][0]["values"][0][1])
+        self.assertNotIn("private content", request.data.decode())
+        self.assertEqual(event["original_bytes"], 15)
+        self.assertEqual(event["returned_tokens_estimate"], 1.25)
+        self.assertEqual(event["saved_tokens_estimate"], 2.5)
+
+    def test_failure_does_not_break_command(self):
+        with mock.patch("server.SMART_BASH_LOKI_URL", "http://localhost:3100"):
+            with mock.patch("server.urllib.request.urlopen", side_effect=OSError):
+                with mock.patch("sys.stderr", new_callable=io.StringIO) as stderr:
+                    server.record_usage("large", "small", "summary")
+        self.assertIn("telemetry unavailable", stderr.getvalue())
+
+    def test_no_telemetry_when_disabled(self):
+        with mock.patch("server.SMART_BASH_LOKI_URL", ""):
+            with mock.patch("server.urllib.request.urlopen") as urlopen:
+                server.record_usage("raw", "summary", "summary")
+        urlopen.assert_not_called()
 
 
 if __name__ == "__main__":

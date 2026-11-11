@@ -1,0 +1,99 @@
+{
+  "uid": "smart-bash-savings",
+  "title": "Smart Bash context savings",
+  "schemaVersion": 39,
+  "timezone": "browser",
+  "time": { "from": "now-7d", "to": "now" },
+  "refresh": "1m",
+  "templating": {
+    "list": [
+      {
+        "type": "textbox",
+        "name": "context_window_tokens",
+        "label": "Context window size (tokens)",
+        "query": "200000",
+        "current": { "text": "200000", "value": "200000" },
+        "options": [],
+        "hide": 0
+      }
+    ]
+  },
+  "panels": [
+    {
+      "id": 1,
+      "type": "stat",
+      "title": "Original tokens (estimated)",
+      "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap original_tokens_estimate | __error__=\"\" [$__range]))" }]
+    },
+    {
+      "id": 2,
+      "type": "stat",
+      "title": "Returned tokens (estimated)",
+      "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap returned_tokens_estimate | __error__=\"\" [$__range]))" }]
+    },
+    {
+      "id": 3,
+      "type": "stat",
+      "title": "Saved tokens (estimated)",
+      "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range]))" }]
+    },
+    {
+      "id": 4,
+      "type": "stat",
+      "title": "Recorded commands",
+      "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(count_over_time({app=\"smart-bash\"} [$__range]))" }]
+    },
+    {
+      "id": 5,
+      "type": "timeseries",
+      "title": "Estimated tokens saved over time",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 5 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__interval]))" }]
+    },
+    {
+      "id": 6,
+      "type": "stat",
+      "title": "Original output bytes",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 13 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap original_bytes | __error__=\"\" [$__range]))" }]
+    },
+    {
+      "id": 7,
+      "type": "stat",
+      "title": "Returned output bytes",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 13 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap returned_bytes | __error__=\"\" [$__range]))" }]
+    },
+    {
+      "id": 8,
+      "type": "stat",
+      "title": "Average per-call reduction (% of context window, estimated)",
+      "description": "Average estimated tool-output tokens removed per call, divided by the configured context window size. This is not actual context occupancy or model token usage.",
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 18 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 3 }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / sum(count_over_time({app=\"smart-bash\"} [$__range])) / ${context_window_tokens} * 100" }]
+    },
+    {
+      "id": 9,
+      "type": "stat",
+      "title": "Cumulative context-window equivalents (estimated)",
+      "description": "Estimated output tokens removed across the selected range divided by the configured context window size. This cumulative equivalent is not the number of actual context windows saved.",
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 18 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "fieldConfig": { "defaults": { "unit": "short", "decimals": 3 }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / ${context_window_tokens}" }]
+    }
+  ]
+}
