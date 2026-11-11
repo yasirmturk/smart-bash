@@ -1,6 +1,15 @@
 # Smart Bash MCP
 
+<p align="center">
+  <img src="assets/smart-bash-logo.svg" alt="Smart Bash — cut tokens, lower costs" width="640">
+</p>
+
+[![Tests](https://github.com/yasirmturk/smart-bash/actions/workflows/tests.yml/badge.svg)](https://github.com/yasirmturk/smart-bash/actions/workflows/tests.yml)
+[![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-FFDD00?logo=buymeacoffee&logoColor=000000)](https://www.buymeacoffee.com/yturk)
+
 An MCP server that runs shell commands and optionally summarizes long output with an OpenAI-compatible chat-completions endpoint. Short output and raw-mode requests bypass the model.
+
+The dashboard reports rough estimates of tokens removed from tool output and their equivalent share of a context window over 1-, 7-, and 30-day periods; these are not actual session or context-window usage. More stats are planned, and users are welcome to share findings and ideas through GitHub issues or pull requests.
 
 ## Safety and privacy
 
@@ -83,43 +92,7 @@ Output of 300 or more characters is summarized by default; only the first 8,000 
 
 ## Local savings report
 
-The optional Grafana and Loki stack records only mode and numeric byte and token estimates, not command text or output. The dashboard compares the bytes in the original combined output with the response returned to the agent; raw-mode responses are compared with themselves. Tokens are **rough estimates** using four UTF-8 bytes per token, not actual tokenizer counts or complete agent context usage. Savings can be negative when a response grows. Timeout and startup errors are not recorded. Model request tokens and previous tool calls are not measured.
-
-The dashboard defaults to the last 7 days; change the time picker to view another range. Loki data is stored in the `smart-bash-loki-data` Podman volume and survives container restarts, but metrics only exist from when telemetry was enabled and the MCP server reconnected. No earlier command history can be reconstructed.
-
-The **Context window size (tokens)** dashboard textbox defaults to `200000`; set it to the model's context limit. The dashboard uses it to show the average estimated per-call output reduction as a percentage of one context window, and cumulative estimated reductions as context-window equivalents for the selected time range. These are comparison estimates only: they are not actual agent context occupancy, model tokenizer counts, or a count of conversations/windows saved. Adjust the textbox when comparing models with different limits.
-
-With Podman running, execute the following from the project directory:
-
-```sh
-podman network create smart-bash-monitoring
-podman volume create smart-bash-loki-data
-podman volume create smart-bash-grafana-data
-podman run -d --name smart-bash-loki --network smart-bash-monitoring \
-  --restart unless-stopped -p 127.0.0.1:3100:3100 \
-  -v smart-bash-loki-data:/loki \
-  -v "$(pwd)/monitoring/loki.yaml:/etc/loki/config.yaml:ro" \
-  docker.io/grafana/loki:3.5.7 -config.file=/etc/loki/config.yaml
-podman run -d --name smart-bash-grafana --network smart-bash-monitoring \
-  --restart unless-stopped -p 127.0.0.1:3300:3000 \
-  -e GF_AUTH_ANONYMOUS_ENABLED=true -e GF_AUTH_ANONYMOUS_ORG_ROLE=Viewer \
-  -e GF_AUTH_BASIC_ENABLED=false -e GF_AUTH_DISABLE_LOGIN_FORM=true \
-  -e GF_ANALYTICS_REPORTING_ENABLED=false -e GF_ANALYTICS_CHECK_FOR_UPDATES=false \
-  -v smart-bash-grafana-data:/var/lib/grafana \
-  -v "$(pwd)/monitoring/grafana:/etc/grafana/provisioning:ro" \
-  docker.io/grafana/grafana:12.2.0
-```
-
-To enable metrics without changing client settings, create a file containing the local Loki URL:
-
-```sh
-mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/smart-bash"
-printf '%s\n' 'http://127.0.0.1:3100' > "${XDG_CONFIG_HOME:-$HOME/.config}/smart-bash/loki-url"
-```
-
-Alternatively, set `SMART_BASH_LOKI_URL` in the MCP client's server environment. An empty environment value disables telemetry even if the file exists. Reconnect the MCP server to load changes. Open [the report](http://127.0.0.1:3300/d/smart-bash-savings) after a command runs; choose a time range to generate a report for that period. Only local users should be able to access these unauthenticated services. Keep the loopback bindings and do not point telemetry at an untrusted endpoint. If Loki is unavailable, commands still run and a warning is sent to stderr; missed events are not retried.
-
-The containers and named volumes persist independently of this checkout. Restart stopped containers with `podman start smart-bash-loki smart-bash-grafana`; on macOS, the Podman machine must also be running. Setup commands create resources once; don't rerun them when the containers already exist.
+For local Docker or Podman setup, telemetry details, report interpretation, and troubleshooting, see **[Monitoring setup](MONITORING.md)**.
 
 ## Troubleshooting
 

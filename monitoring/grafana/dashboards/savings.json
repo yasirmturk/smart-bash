@@ -4,6 +4,10 @@
   "schemaVersion": 39,
   "timezone": "browser",
   "time": { "from": "now-7d", "to": "now" },
+  "timepicker": {
+    "time_options": ["1d", "7d", "30d"],
+    "refresh_intervals": ["30s", "1m", "5m"]
+  },
   "refresh": "1m",
   "templating": {
     "list": [
