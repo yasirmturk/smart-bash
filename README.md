@@ -7,12 +7,12 @@
 [![Tests](https://github.com/yasirmturk/smart-bash/actions/workflows/tests.yml/badge.svg)](https://github.com/yasirmturk/smart-bash/actions/workflows/tests.yml)
 [![Buy Me a Coffee](https://img.shields.io/badge/Buy%20me%20a-coffee-FFDD00?logo=buymeacoffee&logoColor=000000)](https://www.buymeacoffee.com/yturk)
 
-Smart Bash is a small MCP server that runs shell commands and summarizes long output, so less text is sent back to your AI assistant. It works with Claude Code, GitHub Copilot CLI, and other stdio-compatible MCP clients.
+Smart Bash is a small MCP server that runs shell commands and summarizes long output, so less text is sent back to your AI assistant. It works with Claude Code, GitHub Copilot CLI and desktop app, and other stdio-compatible MCP clients.
 
 ## Prerequisites
 
 - Python 3.10 or later and pip
-- Claude Code, GitHub Copilot CLI, or another MCP client
+- Claude Code, GitHub Copilot CLI or desktop app, or another MCP client
 - Optionally, [llama.cpp](https://github.com/ggml-org/llama.cpp) for local summaries
 
 Short output and `return_raw=True` work without a language model.
@@ -51,7 +51,7 @@ claude mcp add smart-bash --scope user \
   -- "$(pwd)/.venv/bin/python" "$(pwd)/server.py"
 ```
 
-**GitHub Copilot CLI** — add this entry to `~/.copilot/mcp-config.json`, replacing `/absolute/path/to/smart-bash` with the project directory:
+**GitHub Copilot CLI and desktop app** — both use the same MCP configuration. Add this entry to `~/.copilot/mcp-config.json`, replacing `/absolute/path/to/smart-bash` with the project directory:
 
 ```json
 {
