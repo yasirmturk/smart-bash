@@ -158,6 +158,14 @@ class TelemetryTests(unittest.TestCase):
         self.assertEqual(event["returned_tokens_estimate"], 1.25)
         self.assertEqual(event["saved_tokens_estimate"], 2.5)
 
+    def test_client_attribution(self):
+        with mock.patch("server.SMART_BASH_LOKI_URL", "http://localhost:3100"):
+            with mock.patch("server.SMART_BASH_CLIENT", "claude"):
+                with mock.patch("server.urllib.request.urlopen", return_value=mock.MagicMock()) as urlopen:
+                    server.record_usage("original", "returned", "raw")
+        data = json.loads(urlopen.call_args.args[0].data)
+        self.assertEqual(data["streams"][0]["stream"], {"app": "smart-bash", "client": "claude"})
+
     def test_failure_does_not_break_command(self):
         with mock.patch("server.SMART_BASH_LOKI_URL", "http://localhost:3100"):
             with mock.patch("server.urllib.request.urlopen", side_effect=OSError):

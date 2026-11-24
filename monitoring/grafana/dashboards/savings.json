@@ -1,6 +1,7 @@
 {
   "uid": "smart-bash-savings",
   "title": "Smart Bash context savings",
+  "editable": true,
   "schemaVersion": 39,
   "timezone": "browser",
   "time": { "from": "now-7d", "to": "now" },
@@ -11,6 +12,17 @@
   "refresh": "1m",
   "templating": {
     "list": [
+      {
+        "type": "custom",
+        "name": "client",
+        "label": "Client",
+        "query": "claude,copilot,unknown",
+        "includeAll": true,
+        "allValue": ".*",
+        "multi": true,
+        "current": { "text": "All", "value": "$__all" },
+        "options": []
+      },
       {
         "type": "textbox",
         "name": "context_window_tokens",
@@ -29,7 +41,8 @@
       "title": "Original tokens (estimated)",
       "gridPos": { "h": 5, "w": 6, "x": 0, "y": 0 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap original_tokens_estimate | __error__=\"\" [$__range]))" }]
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap original_tokens_estimate | __error__=\"\" [$__range]))" }]
     },
     {
       "id": 2,
@@ -37,7 +50,8 @@
       "title": "Returned tokens (estimated)",
       "gridPos": { "h": 5, "w": 6, "x": 6, "y": 0 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap returned_tokens_estimate | __error__=\"\" [$__range]))" }]
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap returned_tokens_estimate | __error__=\"\" [$__range]))" }]
     },
     {
       "id": 3,
@@ -45,7 +59,8 @@
       "title": "Saved tokens (estimated)",
       "gridPos": { "h": 5, "w": 6, "x": 12, "y": 0 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range]))" }]
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range]))" }]
     },
     {
       "id": 4,
@@ -53,51 +68,58 @@
       "title": "Recorded commands",
       "gridPos": { "h": 5, "w": 6, "x": 18, "y": 0 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(count_over_time({app=\"smart-bash\"} [$__range]))" }]
+      "fieldConfig": { "defaults": { "unit": "short" }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(count_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" [$__range]))" }]
     },
     {
       "id": 5,
       "type": "timeseries",
-      "title": "Estimated tokens saved over time",
+      "title": "Saved tokens over time by client (estimated, log scale)",
+      "description": "Estimated saved tokens per client and time bucket. The logarithmic axis keeps large outputs from flattening smaller values; zero values cannot be displayed. Gaps are connected for readability.",
       "gridPos": { "h": 8, "w": 24, "x": 0, "y": 5 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__interval]))" }]
-    },
-    {
-      "id": 6,
-      "type": "stat",
-      "title": "Original output bytes",
-      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 13 },
-      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap original_bytes | __error__=\"\" [$__range]))" }]
-    },
-    {
-      "id": 7,
-      "type": "stat",
-      "title": "Returned output bytes",
-      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 13 },
-      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap returned_bytes | __error__=\"\" [$__range]))" }]
+      "fieldConfig": { "defaults": { "unit": "short", "custom": { "drawStyle": "line", "lineInterpolation": "linear", "lineWidth": 2, "showPoints": "never", "spanNulls": true, "scaleDistribution": { "type": "log", "log": 10 } } }, "overrides": [] },
+      "targets": [{ "refId": "A", "legendFormat": "{{client}} - Saved tokens", "expr": "sum by (client) (sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap saved_tokens_estimate | __error__=\"\" [$__interval]))" }]
     },
     {
       "id": 8,
       "type": "stat",
       "title": "Average per-call reduction (% of context window, estimated)",
       "description": "Average estimated tool-output tokens removed per call, divided by the configured context window size. This is not actual context occupancy or model token usage.",
-      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 18 },
+      "gridPos": { "h": 5, "w": 12, "x": 0, "y": 13 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
       "fieldConfig": { "defaults": { "unit": "percent", "decimals": 3 }, "overrides": [] },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / sum(count_over_time({app=\"smart-bash\"} [$__range])) / ${context_window_tokens} * 100" }]
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / sum(count_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" [$__range])) / ${context_window_tokens} * 100" }]
     },
     {
       "id": 9,
       "type": "stat",
       "title": "Cumulative context-window equivalents (estimated)",
       "description": "Estimated output tokens removed across the selected range divided by the configured context window size. This cumulative equivalent is not the number of actual context windows saved.",
-      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 18 },
+      "gridPos": { "h": 5, "w": 12, "x": 12, "y": 13 },
       "datasource": { "type": "loki", "uid": "smart-bash-loki" },
       "fieldConfig": { "defaults": { "unit": "short", "decimals": 3 }, "overrides": [] },
-      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / ${context_window_tokens}" }]
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / ${context_window_tokens}" }]
+    },
+    {
+      "id": 10,
+      "type": "stat",
+      "title": "Total output savings (%)",
+      "description": "100 × total estimated saved tokens / total original tokens. Weighted by output size, not an average of call percentages. No data when original output is zero.",
+      "gridPos": { "h": 5, "w": 24, "x": 0, "y": 18 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "fieldConfig": { "defaults": { "unit": "percent", "decimals": 2 }, "overrides": [] },
+      "targets": [{ "refId": "A", "queryType": "instant", "expr": "100 * sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap saved_tokens_estimate | __error__=\"\" [$__range])) / (sum(sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap original_tokens_estimate | __error__=\"\" [$__range])) > 0)" }]
+    },
+    {
+      "id": 11,
+      "type": "timeseries",
+      "title": "Output savings per interval (%)",
+      "description": "Weighted savings percentage per client and time bucket. Gaps are connected for readability; no percentage is imputed for idle buckets.",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 23 },
+      "datasource": { "type": "loki", "uid": "smart-bash-loki" },
+      "fieldConfig": { "defaults": { "unit": "percent", "custom": { "drawStyle": "line", "lineInterpolation": "linear", "showPoints": "auto", "spanNulls": true } }, "overrides": [] },
+      "targets": [{ "refId": "A", "legendFormat": "{{client}}", "expr": "100 * sum by (client) (sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap saved_tokens_estimate | __error__=\"\" [$__interval])) / (sum by (client) (sum_over_time({app=\"smart-bash\"} | label_format client=\"{{ if .client }}{{ .client }}{{ else }}unknown{{ end }}\" | client=~\"${client:regex}\" | json | unwrap original_tokens_estimate | __error__=\"\" [$__interval])) > 0)" }]
     }
   ]
 }

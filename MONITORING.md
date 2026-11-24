@@ -48,7 +48,19 @@ If Loki is unavailable, command execution continues and a warning is written to 
 
 The dashboard offers 1-day, 7-day, and 30-day ranges. It starts at 7 days. Metrics begin only after telemetry is enabled and the MCP server reconnects; prior command history cannot be reconstructed. Loki data is retained in its named volume unless that volume is deleted.
 
-Set the **Context window size (tokens)** textbox to the model's context limit. The panels show average estimated output reduction per call as a percentage of that configured size, and cumulative reductions as context-window equivalents over the selected period. These are comparisons, not counts of sessions or context windows actually saved. The dashboard currently aggregates all clients and calls together.
+Total and per-interval savings percentages use `100 × total saved / total original`, weighted by output size. Percentages are undefined when original output is zero. The main chart shows estimated saved tokens per client and interval on a logarithmic scale, so large outputs do not flatten smaller values. Zero values cannot be shown on a log scale; gaps are connected for readability. It is not a cumulative token count or continuous observation. The percentage chart leaves idle buckets empty.
+
+Set the **Context window size (tokens)** textbox to the model's context limit. The panels show average estimated output reduction per call as a percentage of that configured size, and cumulative reductions as context-window equivalents over the selected period. These are comparisons, not counts of sessions or context windows actually saved.
+
+## Client attribution
+
+Add `SMART_BASH_CLIENT` to each MCP server's environment: use `claude` for Claude Code and `copilot` for Copilot. Restart the MCP servers to load it. The dashboard's **Client** filter selects these labels. New events without a label use `unknown`; older events without a client field are shown as **Unknown** in dashboard queries without changing the stored logs. Labels are explicit, not inferred. Copilot CLI and desktop share their label; session-level attribution is not implemented.
+
+## Edit charts
+
+Anonymous access is read-only. Sign in at <http://127.0.0.1:3300/login> with your Grafana account (Editor or Admin) to edit and save charts. A fresh Grafana installation initially uses `admin` / `admin` and prompts for a new password; existing installations retain their credentials.
+
+Provisioned dashboards allow UI saves, but changes are stored in Grafana's database, not the repository JSON. Updating the provisioned JSON can overwrite those edits. For a personal dashboard, use **Save as copy**; export its JSON if you want to contribute it back. The default dashboard and your copies persist in the Grafana volume.
 
 ## Stop and remove
 

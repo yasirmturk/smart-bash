@@ -30,6 +30,7 @@ def loki_url() -> str:
         return ""
 
 SMART_BASH_LOKI_URL = loki_url()
+SMART_BASH_CLIENT = os.environ.get("SMART_BASH_CLIENT", "unknown").strip() or "unknown"
 
 def record_usage(original: str, returned: str, mode: str) -> None:
     if not SMART_BASH_LOKI_URL:
@@ -46,7 +47,7 @@ def record_usage(original: str, returned: str, mode: str) -> None:
     }
     payload = json.dumps({
         "streams": [{
-            "stream": {"app": "smart-bash"},
+            "stream": {"app": "smart-bash", "client": SMART_BASH_CLIENT},
             "values": [[str(time.time_ns()), json.dumps(event)]],
         }]
     }).encode("utf-8")
